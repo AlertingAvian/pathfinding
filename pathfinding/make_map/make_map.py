@@ -1,3 +1,6 @@
+# Copyright (c) 2022, Patrick Maloney
+# All rights reserved.
+
 from typing import List
 from random import getrandbits
 from termcolor import colored
@@ -36,7 +39,7 @@ def fill_map(array: List) -> List: # not guaranteed solvable yet
             point.down = bool(getrandbits(1))
             point.left = bool(getrandbits(1))
             point.right = bool(getrandbits(1))
-            match (x, y):
+            match (x, y): # misses some cases ex. x0 yMax right true
                 case (0, 0):
                     point.up = True
                     point.left = False
