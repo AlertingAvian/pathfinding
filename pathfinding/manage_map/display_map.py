@@ -43,4 +43,5 @@ class Window(object):
         self.window.finalize()
 
 test_window = Window(10, 10, 'Test Window')
+input('Press enter to continue...')
 
