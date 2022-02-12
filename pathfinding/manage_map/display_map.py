@@ -42,7 +42,7 @@ class Window(object):
         
         self.window = sg.Window(self.title, layout=self.layout)
         self.canvas = self.window['canvas'].TKCanvas
-        self.canvas.TKCanvas.itemconfig(self.canvas.TKCanvas.create_polygon(0, 0, cell_size, cell_size, bg='white'))
+        self.canvas.itemconfig(self.canvas.create_rectangle(0, 0, cell_size, cell_size, fill='white'))
         self.window.finalize()
 
 test_window = Window(10, 10, 'Test Window')
