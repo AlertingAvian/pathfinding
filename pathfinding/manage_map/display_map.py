@@ -33,14 +33,14 @@ class Window(object):
         self.map_height = map_height
         self.width = map_width * 10 + (padding * 2)
         self.height = map_height * 10 + (padding * 2)
-        self.window_size = size=(self.map_height*cell_size, self.map_width*cell_size)
+        self.window_size = (self.width, self.height)
         self.title = title
         self.theme = sg.theme('Topanga')
 
-        self.layout = [[sg.Canvas(, background_color='black', key='canvas')],
+        self.layout = [[sg.Canvas(size=(self.map_height*cell_size, self.map_width*cell_size), background_color='black', key='canvas')],
                        [sg.Button('Start', key='start'), sg.Button('Stop', key='stop', disabled=True), sg.Button('Reset', key='reset'), sg.Button('Quit', key='quit', button_color=('white', 'red'))]]
         
-        self.window = sg.Window(self.title, size=(self.width, self.height), layout=self.layout)
+        self.window = sg.Window(self.title, layout=self.layout)
         self.window.finalize()
 
 test_window = Window(10, 10, 'Test Window')
