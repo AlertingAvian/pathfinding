@@ -2,7 +2,6 @@
 # All rights reserved.
 
 
-from curses import window
 import PySimpleGUI as sg
 from make_map import MapPoint
 
