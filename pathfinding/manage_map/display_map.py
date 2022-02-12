@@ -2,8 +2,13 @@
 # All rights reserved.
 
 
-import PySimpleGUI as sg
 from make_map import MapPoint
+
+import PySimpleGUI as sg
+from typing import List
+from os import system, name
+from termcolor import colored
+
 
 class DisplayPoint(MapPoint):
     """
@@ -23,28 +28,31 @@ class DisplayPoint(MapPoint):
         return super.__repr__(self)
 
 
-class Window(object):
-    """
-    Class for managing the window.
-    """
+def create_static_display(array: List) -> str:
+    x_len = len(array) + 2
+    output_string = ''
+    output_string += colored(' '*x_len, 'white', attrs=['reverse'])
+    output_string += '\n'
+    for x, row in enumerate(array):
+        output_string += colored(' ', 'white', attrs=['reverse'])
+        for y, point in enumerate(row):
+            match point:
+                case point if point.start:
+                    output_string += colored(' ', 'green', attrs=['reverse'])
+                case point if point.end:
+                    output_string += colored(' ', 'red', attrs=['reverse'])
+                case point if point.obstruction:
+                    output_string += colored(' ', 'white', attrs=['reverse'])
+                case _:
+                    output_string += ' '
+        output_string += colored(' ', 'white', attrs=['reverse'])
+        output_string += '\n'
+    output_string += colored(' '*x_len, 'white', attrs=['reverse'])
+    return output_string
 
-    def __init__(self, map_width: int, map_height: int, title: str, cell_size: int = 40, padding: int = 40):
-        self.map_width = map_width
-        self.map_height = map_height
-        self.width = map_width * 10 + (padding * 2)
-        self.height = map_height * 10 + (padding * 2)
-        self.window_size = (self.width, self.height)
-        self.title = title
-        self.theme = sg.theme('Topanga')
 
-        self.layout = [[sg.Canvas(size=(self.map_height*cell_size, self.map_width*cell_size), background_color='black', key='canvas')],
-                       [sg.Button('Start', key='start'), sg.Button('Stop', key='stop', disabled=True), sg.Button('Reset', key='reset'), sg.Button('Quit', key='quit', button_color=('white', 'red'))]]
-        
-        self.window = sg.Window(self.title, layout=self.layout)
-        self.canvas = self.window['canvas'].TKCanvas
-        self.canvas.itemconfig(self.canvas.create_rectangle(0, 0, cell_size, cell_size, fill='white'))
-        self.window.finalize()
-
-test_window = Window(10, 10, 'Test Window')
-input('Press enter to continue...')
-
+def clear_terminal() -> None:
+    if name == 'nt':
+        _ = system('cls')
+    else:
+        _ = system('clear')
