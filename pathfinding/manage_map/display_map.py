@@ -28,7 +28,7 @@ class Window(object):
     Class for managing the window.
     """
 
-    def __init__(self, map_width: int, map_height: int, title: str, cell_size: int = 10, padding: int = 20):
+    def __init__(self, map_width: int, map_height: int, title: str, cell_size: int = 10, padding: int = 40):
         self.map_width = map_width
         self.map_height = map_height
         self.width = map_width * 10 + (padding * 2)
