@@ -41,7 +41,7 @@ class Window(object):
                        [sg.Button('Start', key='start'), sg.Button('Stop', key='stop', disabled=True), sg.Button('Reset', key='reset'), sg.Button('Quit', key='quit', button_color=('white', 'red'))]]
         
         self.window = sg.Window(self.title, layout=self.layout)
-        self.canvas = self.window['canvas']
+        self.canvas = self.window['canvas'].TKCanvas
         self.canvas.TKCanvas.itemconfig(self.canvas.TKCanvas.create_polygon(0, 0, cell_size, cell_size, bg='white'))
         self.window.finalize()
 
