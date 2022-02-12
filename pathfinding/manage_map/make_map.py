@@ -27,10 +27,10 @@ def fill_map(array: List, clear_chance: float = 0.75) -> List:
     y_max = len(array[0]) - 1
     for x, row in enumerate(array):
         for y, point in enumerate(row):
-            match (x,y):
-                case (0,0):
+            match (x, y):
+                case (0, 0):
                     point.start = True
-                case (x,y) if (x,y) == (x_max,y_max):
+                case (x, y) if (x, y) == (x_max, y_max):
                     point.end = True
                 case _:
                     if round(random(), 2) > clear_chance:
@@ -61,6 +61,12 @@ def create_static_display(array: List) -> str:
     return output_string
 
 
+def create_map(x: int, y: int, clear_chance: float = 0.75) -> List:
+    array = create_array(x, y)
+    array = fill_map(array, clear_chance)
+    return(array)
+
+
 def clear_terminal() -> None:
     if name == 'nt':
         _ = system('cls')
@@ -69,8 +75,7 @@ def clear_terminal() -> None:
 
 
 if __name__ == "__main__":
-    array = create_array(10, 10)
+    array = create_array(30, 30)
     map = fill_map(array, clear_chance=0.8)
-    # print('\x1bc')
     clear_terminal()
     print(create_static_display(map))
