@@ -14,6 +14,18 @@ from termcolor import colored
 from dataclasses import dataclass
 
 
+# TODO: finish move
+# TODO: make functions default to class attribute map instead of having the array passed as a parameter
+# TODO: setup logging
+# TODO: provide way to inform search if exit is found -DONE
+
+
+load_dotenv()
+logging.config.fileConfig(Path(environ['LOGGING_CONFIG_PATH']))
+logger = logging.getLogger('displayMap')
+logger.debug('Logger initialized')
+
+
 class DisplayPoint(MapPoint):
     """
     Subclass of MapPoint.
@@ -30,15 +42,6 @@ class DisplayPoint(MapPoint):
 
     def __reper__(self):
         return super.__repr__(self)
-
-# TODO: finish move
-# TODO: make functions default to class attribute map instead of having the array passed as a parameter
-# TODO: setup logging
-# TODO: provide way to inform search if exit is found -DONE
-
-load_dotenv()
-logging.config.fileConfig(Path(environ['LOGGING_CONFIG_PATH'])) # NOT WORKING
-logger = logging.getLogger('displayMap') # NOT WORKING
 
 
 @dataclass
