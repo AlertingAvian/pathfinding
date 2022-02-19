@@ -4,8 +4,12 @@
 
 from make_map import MapPoint
 
+import logging
+import logging.config
+from dotenv import load_dotenv
 from typing import List, Tuple
-from os import system, name
+from os import system, name, environ
+from pathlib import Path
 from termcolor import colored
 from dataclasses import dataclass
 
@@ -28,14 +32,23 @@ class DisplayPoint(MapPoint):
         return super.__repr__(self)
 
 # TODO: finish move
-# TODO: provide way to inform search if exit is found
+# TODO: make functions default to class attribute map instead of having the array passed as a parameter
+# TODO: setup logging
+# TODO: provide way to inform search if exit is found -DONE
+
+load_dotenv()
+logging.config.fileConfig(Path(environ['LOGGING_CONFIG_PATH'])) # NOT WORKING
+logger = logging.getLogger('displayMap') # NOT WORKING
+
 
 @dataclass
 class CellInfo:
     """
     Class used to store information about a cell.
+    is_exit - true if cell is an exit
     up, down, left, right: bool - True if the above cell is obstructed, None - if there is no cell above
     """
+    is_exit: bool
     up: bool | None
     down: bool | None
     left: bool | None
@@ -48,7 +61,7 @@ class MapDisplay(object):
 
     def __init__(self, array: List[List[MapPoint, ]]):
         self.map = self.__convert_mappoints_to_displaypoints(array)
-    
+
     def __convert_mappoints_to_displaypoints(self, array: List[List[MapPoint, ]]) -> List[List[DisplayPoint, ]]:
         """
         Converts a 2D array of MapPoints to a 2D array of DisplayPoints.
@@ -56,7 +69,7 @@ class MapDisplay(object):
         x_len = len(array)
         y_len = len(array[0])
         display_array = [[DisplayPoint(j, i)
-                        for i in range(y_len)] for j in range(x_len)]
+                          for i in range(y_len)] for j in range(x_len)]
         for x, row in enumerate(array):
             for y, point in enumerate(row):
                 match point:
@@ -70,26 +83,27 @@ class MapDisplay(object):
                         pass
         return display_array
 
-    def move(self, direction: str, array: List[List[DisplayPoint]]):
+    def move(self, direction: str, array: List[List[DisplayPoint]] = [[None]]):
         """
         Moves the active cell to the next cell in the given direction.
         """
         if not isinstance(array[0][0], DisplayPoint):
-            raise TypeError('The array must be a 2D array of DisplayPoints.')
-        if self.current_cell is not None:
-            x, y = self.current_cell
-            array[x][y].active = False
-            self.last_cell = self.current_cell
+            pass
+        # if self.current_cell is not None:
+        #     x, y = self.current_cell
+        #     array[x][y].active = False
+        #     self.last_cell = self.current_cell
         if direction == "up":
-            self.current_cell = (self.current_cell[0] - 1, self.current_cell[1])
+            new_cell = (self.current_cell[0] - 1, self.current_cell[1])
         elif direction == "down":
-            self.current_cell = (self.current_cell[0] + 1, self.current_cell[1])
+            new_cell = (self.current_cell[0] + 1, self.current_cell[1])
         elif direction == "left":
-            self.current_cell = (self.current_cell[0], self.current_cell[1] - 1)
+            new_cell = (self.current_cell[0], self.current_cell[1] - 1)
         elif direction == "right":
-            self.current_cell = (self.current_cell[0], self.current_cell[1] + 1)
+            new_cell = (self.current_cell[0], self.current_cell[1] + 1)
         else:
-            raise ValueError(f'Invalid move -> {direction}\nMust be one of: "up", "down", "left", "right"')
+            raise ValueError(
+                f'Invalid move -> {direction}\nMust be one of: "up", "down", "left", "right"')
         # NOT FINISHED
 
     def __get_cell_information(self, array: List[List[DisplayPoint]], coords: Tuple[int, int]) -> CellInfo:
@@ -110,7 +124,8 @@ class MapDisplay(object):
             right = None
         else:
             right = array[x][y+1].obstruction
-        return CellInfo(up, down, left, right)
+        is_exit = array[x][y].end
+        return CellInfo(is_exit, up, down, left, right)
 
 
 def __display(array: List[DisplayPoint]) -> str:
