@@ -1,10 +1,23 @@
 # Copyright (c) 2022, Patrick Maloney
 # All rights reserved.
 
+######################
+# MOVED TO DISPLAY MAP
+######################
+
+import logging
+import logging.config
+from dotenv import load_dotenv
+from pathlib import Path
+from os import environ
 from typing import List
 from random import random
 from dataclasses import dataclass
 
+# load_dotenv()
+# logging.config.fileConfig(Path(environ['LOGGING_CONFIG_PATH']))
+# mm_logger = logging.getLogger('makeMap')
+# mm_logger.debug('logger initialized')
 
 @dataclass
 class MapPoint:
@@ -16,6 +29,7 @@ class MapPoint:
 
 
 def create_array(x: int, y: int) -> List:
+    mm_logger.debug(f'Creating array of size {x}x{y}')
     array = [[MapPoint(j, i) for i in range(y)] for j in range(x)]
     return array
 
@@ -33,10 +47,12 @@ def fill_map(array: List, clear_chance: float = 0.75) -> List:
                 case _:
                     if round(random(), 2) > clear_chance:
                         point.obstruction = True
+            mm_logger.debug(f'Point at {x}, {y} is {point}')
     return(array)
 
 
 def create_map(x: int, y: int, clear_chance: float = 0.75) -> List:
+    mm_logger.debug(f'Creating map of size {x}x{y}, with clear chance of {clear_chance}')
     array = create_array(x, y)
     array = fill_map(array, clear_chance)
     return(array)

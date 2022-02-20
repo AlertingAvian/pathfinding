@@ -2,28 +2,71 @@
 # All rights reserved.
 
 
-from make_map import MapPoint, create_array
-
 import logging
 import logging.config
+from pathlib import Path
+from random import random
+from termcolor import colored
 from dotenv import load_dotenv
 from typing import List, Tuple
-from os import system, name, environ
-from pathlib import Path
-from termcolor import colored
 from dataclasses import dataclass
-
-
-# TODO: finish move
-# TODO: make functions default to class attribute map instead of having the array passed as a parameter
-# TODO: setup logging -DONE
-# TODO: provide way to inform search if exit is found -DONE
+from os import system, name, environ
 
 
 load_dotenv()
 logging.config.fileConfig(Path(environ['LOGGING_CONFIG_PATH']))
-logger = logging.getLogger('displayMap')
-logger.debug('Logger initialized')
+dm_logger = logging.getLogger('displayMap')
+dm_logger.debug('logger initialized')
+mm_logger = logging.getLogger('makeMap')
+mm_logger.debug('logger initialized')
+
+###
+# Make Map
+###
+
+
+@dataclass
+class MapPoint:
+    x: int
+    y: int
+    obstruction: bool = False
+    start: bool = False
+    end: bool = False
+
+
+def create_array(x: int, y: int) -> List:
+    mm_logger.debug(f'Creating array of size {x}x{y}')
+    array = [[MapPoint(j, i) for i in range(y)] for j in range(x)]
+    return array
+
+
+def fill_map(array: List, clear_chance: float = 0.75) -> List:
+    x_max = len(array) - 1
+    y_max = len(array[0]) - 1
+    for x, row in enumerate(array):
+        for y, point in enumerate(row):
+            match (x, y):
+                case (0, 0):
+                    point.start = True
+                case (x, y) if (x, y) == (x_max, y_max):
+                    point.end = True
+                case _:
+                    if round(random(), 2) > clear_chance:
+                        point.obstruction = True
+            mm_logger.debug(f'Point at {x}, {y} is {point}')
+    return(array)
+
+
+def create_map(x: int, y: int, clear_chance: float = 0.75) -> List:
+    mm_logger.debug(
+        f'Creating map of size {x}x{y}, with clear chance of {clear_chance}')
+    array = create_array(x, y)
+    array = fill_map(array, clear_chance)
+    return(array)
+
+###
+# Display Map
+###
 
 
 class DisplayPoint(MapPoint):
@@ -61,10 +104,11 @@ class CellInfo:
 class MapDisplay(object):
     current_cell: Tuple[int, int] = None
     last_cell: Tuple[int, int] = None
+    start: Tuple[int, int] = None
 
     def __init__(self, array: List[List[MapPoint, ]]):
         self.map = self.__convert_mappoints_to_displaypoints(array)
-        logger.debug('MapDisplay initialized')
+        dm_logger.debug('MapDisplay initialized')
 
     def __convert_mappoints_to_displaypoints(self, array: List[List[MapPoint, ]]) -> List[List[DisplayPoint, ]]:
         """
@@ -78,6 +122,8 @@ class MapDisplay(object):
             for y, point in enumerate(row):
                 match point:
                     case point if point.start:
+                        self.start = (x, y)
+                        self.current_cell = (x, y)
                         display_array[x][y].start = True
                     case point if point.end:
                         display_array[x][y].end = True
@@ -87,15 +133,15 @@ class MapDisplay(object):
                         pass
         return display_array
 
-    def move(self, direction: str, array: List[List[DisplayPoint]] = [[None]]):
+    def move(self, direction: str, array: List[List[DisplayPoint]] = None) -> CellInfo:
         """
         Moves the active cell to the next cell in the given direction.
         """
         if array is None:
             array = self.map
-            logger.debug('Array not provided. Using class variable map.')
+            dm_logger.debug('Array not provided. Using class variable map.')
         if not isinstance(array[0][0], DisplayPoint):
-            logger.error('Array is not a 2D array of DisplayPoints.')
+            dm_logger.error('Array is not a 2D array of DisplayPoints.')
             raise TypeError('Array is not a 2D array of DisplayPoints.')
         if direction == "up":
             new_cell = (self.current_cell[0] - 1, self.current_cell[1])
@@ -106,32 +152,43 @@ class MapDisplay(object):
         elif direction == "right":
             new_cell = (self.current_cell[0], self.current_cell[1] + 1)
         else:
-            logger.error(
+            dm_logger.error(
                 f'Invalid move -> {direction}\nMust be one of: "up", "down", "left", "right"')
             raise ValueError(
                 f'Invalid move -> {direction}\nMust be one of: "up", "down", "left", "right"')
-        # NEED TO CHECK FOR VALID MOVES, if out of bounds, if movement is obstructed, raise exception if so? idk.
         if new_cell[0] < 0 or new_cell[1] < 0 or new_cell[0] > len(array) - 1 or new_cell[1] > len(array[0]) - 1:
-            logger.error(f'Invalid move -> {direction}\nOut of bounds.')
-            raise ValueError(f'Invalid move -> {direction}\nOut of bounds.')
+            dm_logger.error(f'Invalid move -> {direction}. Out of bounds.')
+            raise ValueError(f'Invalid move -> {direction}. Out of bounds.')
         if array[new_cell[0]][new_cell[1]].obstruction:
-            logger.error(f'Invalid move -> {direction}\nObstructed.')
-            raise ValueError(f'Invalid move -> {direction}\nObstructed.')
+            dm_logger.error(f'Invalid move -> {direction}. Obstructed.')
+            raise ValueError(f'Invalid move -> {direction}. Obstructed.')
         self.last_cell = self.current_cell
+        array[self.current_cell[0]][self.current_cell[1]].active = False
         self.current_cell = new_cell
+        array[self.current_cell[0]][self.current_cell[1]].active = True
+        array[self.current_cell[0]][self.current_cell[1]].searched = True
         return self.__get_cell_information(array, new_cell)
 
-    def display(self, array: List[List[DisplayPoint]] = [[None]]):
+    def update_display(self, array: List[List[DisplayPoint]] = None):
         """
         Displays the map.
         """
+        dm_logger.debug('Updating dispay.')
         if array is None:
             array = self.map
-            logger.debug('Array not provided. Using class variable map.')
+            dm_logger.debug('Array not provided. Using class variable map.')
         if not isinstance(array[0][0], DisplayPoint):
-            logger.error('Array is not a 2D array of DisplayPoints.')
+            dm_logger.error('Array is not a 2D array of DisplayPoints.')
             raise TypeError('Array is not a 2D array of DisplayPoints.')
-        # NOT FINISHED
+        output_string = self.__display(array)
+        self.__clear_terminal()
+        print(output_string)
+
+    def __clear_terminal(self) -> None:
+        if name == 'nt':
+            _ = system('cls')
+        else:
+            _ = system('clear')
 
     def __get_cell_information(self, array: List[List[DisplayPoint]], coords: Tuple[int, int]) -> CellInfo:
         x, y = coords
@@ -154,76 +211,36 @@ class MapDisplay(object):
         is_exit = array[x][y].end
         return CellInfo(is_exit, up, down, left, right)
 
-
-def __display(array: List[DisplayPoint]) -> str:
-    active_color = 'yellow'
-    searched_color = 'grey'
-    x_len = len(array) + 2
-    output_string = ''
-    output_string += colored(' '*x_len, 'white', attrs=['reverse'])
-    output_string += '\n'
-    for x, row in enumerate(array):
-        output_string += colored(' ', 'white', attrs=['reverse'])
-        for y, point in enumerate(row):
-            match point:
-                case point if point.start:
-                    output_string += colored(' ', 'green', attrs=['reverse'])
-                case point if point.end:
-                    output_string += colored(' ', 'red', attrs=['reverse'])
-                case point if point.obstruction:
-                    output_string += colored(' ', 'white', attrs=['reverse'])
-                case _:
-                    match point:
-                        case point if point.active:
-                            output_string += colored(' ',
-                                                     active_color, attrs=['reverse'])
-                        case point if point.searched:
-                            output_string += colored(' ',
-                                                     searched_color, attrs=['reverse'])
-                        case _:
-                            output_string += ' '
-        output_string += colored(' ', 'white', attrs=['reverse'])
+    def __display(self, array: List[DisplayPoint]) -> str:
+        active_color = 'blue'
+        searched_color = 'magenta'
+        x_len = len(array) + 2
+        output_string = ''
+        output_string += colored(' '*x_len, 'white', attrs=['reverse'])
         output_string += '\n'
-    output_string += colored(' '*x_len, 'white', attrs=['reverse'])
-    return output_string
-
-
-def update_display(array: List[List[DisplayPoint, ]]) -> None:
-    """
-    Updates the display of the map.
-    """
-    if not isinstance(array[0][0], DisplayPoint):
-        raise TypeError('The array must be a 2D array of DisplayPoints.')
-    output_string = __display(array)
-    clear_terminal()
-    print(output_string)
-
-
-def clear_terminal() -> None:
-    if name == 'nt':
-        _ = system('cls')
-    else:
-        _ = system('clear')
-
-
-def get_cell_information(array: List[List[DisplayPoint]], coords: Tuple[int, int]) -> CellInfo:
-    if not isinstance(array[0][0], DisplayPoint):
-        raise TypeError('The array must be a 2D array of DisplayPoints.')
-    x, y = coords
-    if x == 0:
-        up = None
-    else:
-        up = array[x-1][y].obstruction
-    if x == len(array) - 1:
-        down = None
-    else:
-        down = array[x+1][y].obstruction
-    if y == 0:
-        left = None
-    else:
-        left = array[x][y-1].obstruction
-    if y == len(array[0]) - 1:
-        right = None
-    else:
-        right = array[x][y+1].obstruction
-    return CellInfo(up, down, left, right)
+        for x, row in enumerate(array):
+            output_string += colored(' ', 'white', attrs=['reverse'])
+            for y, point in enumerate(row):
+                match point:
+                    case point if point.start:
+                        output_string += colored(' ',
+                                                 'green', attrs=['reverse'])
+                    case point if point.end:
+                        output_string += colored(' ', 'red', attrs=['reverse'])
+                    case point if point.obstruction:
+                        output_string += colored(' ',
+                                                 'white', attrs=['reverse'])
+                    case _:
+                        match point:
+                            case point if point.active:
+                                output_string += colored(' ',
+                                                         active_color, attrs=['reverse'])
+                            case point if point.searched:
+                                output_string += colored(' ',
+                                                         searched_color, attrs=['reverse'])
+                            case _:
+                                output_string += ' '
+            output_string += colored(' ', 'white', attrs=['reverse'])
+            output_string += '\n'
+        output_string += colored(' '*x_len, 'white', attrs=['reverse'])
+        return output_string
