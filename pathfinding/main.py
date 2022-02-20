@@ -4,7 +4,7 @@ from dotenv import load_dotenv
 from pathlib import Path
 from os import environ
 
-from manage_map import display_map
+from manage_map import map_manager
 
 load_dotenv()
 logging.config.fileConfig(Path(environ['LOGGING_CONFIG_PATH']))
@@ -14,8 +14,8 @@ logger.debug('logger initialized')
 
 def main():
     logger.info('Starting main')
-    map = display_map.create_map(10, 10)
-    display_manager = display_map.MapDisplay(map)
+    map = map_manager.create_map(10, 10)
+    display_manager = map_manager.MapDisplay(map)
     display_manager.update_display()
     display_manager.move('down')
     display_manager.update_display()
