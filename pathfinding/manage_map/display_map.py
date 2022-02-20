@@ -2,7 +2,7 @@
 # All rights reserved.
 
 
-from make_map import MapPoint
+from make_map import MapPoint, create_array
 
 import logging
 import logging.config
@@ -16,7 +16,7 @@ from dataclasses import dataclass
 
 # TODO: finish move
 # TODO: make functions default to class attribute map instead of having the array passed as a parameter
-# TODO: setup logging
+# TODO: setup logging -DONE
 # TODO: provide way to inform search if exit is found -DONE
 
 
@@ -64,6 +64,7 @@ class MapDisplay(object):
 
     def __init__(self, array: List[List[MapPoint, ]]):
         self.map = self.__convert_mappoints_to_displaypoints(array)
+        logger.debug('MapDisplay initialized')
 
     def __convert_mappoints_to_displaypoints(self, array: List[List[MapPoint, ]]) -> List[List[DisplayPoint, ]]:
         """
@@ -90,12 +91,12 @@ class MapDisplay(object):
         """
         Moves the active cell to the next cell in the given direction.
         """
+        if array is None:
+            array = self.map
+            logger.debug('Array not provided. Using class variable map.')
         if not isinstance(array[0][0], DisplayPoint):
-            pass
-        # if self.current_cell is not None:
-        #     x, y = self.current_cell
-        #     array[x][y].active = False
-        #     self.last_cell = self.current_cell
+            logger.error('Array is not a 2D array of DisplayPoints.')
+            raise TypeError('Array is not a 2D array of DisplayPoints.')
         if direction == "up":
             new_cell = (self.current_cell[0] - 1, self.current_cell[1])
         elif direction == "down":
@@ -105,8 +106,31 @@ class MapDisplay(object):
         elif direction == "right":
             new_cell = (self.current_cell[0], self.current_cell[1] + 1)
         else:
+            logger.error(
+                f'Invalid move -> {direction}\nMust be one of: "up", "down", "left", "right"')
             raise ValueError(
                 f'Invalid move -> {direction}\nMust be one of: "up", "down", "left", "right"')
+        # NEED TO CHECK FOR VALID MOVES, if out of bounds, if movement is obstructed, raise exception if so? idk.
+        if new_cell[0] < 0 or new_cell[1] < 0 or new_cell[0] > len(array) - 1 or new_cell[1] > len(array[0]) - 1:
+            logger.error(f'Invalid move -> {direction}\nOut of bounds.')
+            raise ValueError(f'Invalid move -> {direction}\nOut of bounds.')
+        if array[new_cell[0]][new_cell[1]].obstruction:
+            logger.error(f'Invalid move -> {direction}\nObstructed.')
+            raise ValueError(f'Invalid move -> {direction}\nObstructed.')
+        self.last_cell = self.current_cell
+        self.current_cell = new_cell
+        return self.__get_cell_information(array, new_cell)
+
+    def display(self, array: List[List[DisplayPoint]] = [[None]]):
+        """
+        Displays the map.
+        """
+        if array is None:
+            array = self.map
+            logger.debug('Array not provided. Using class variable map.')
+        if not isinstance(array[0][0], DisplayPoint):
+            logger.error('Array is not a 2D array of DisplayPoints.')
+            raise TypeError('Array is not a 2D array of DisplayPoints.')
         # NOT FINISHED
 
     def __get_cell_information(self, array: List[List[DisplayPoint]], coords: Tuple[int, int]) -> CellInfo:
